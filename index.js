@@ -8,53 +8,130 @@ const myArgs = args.slice(2);
 
 const options = myArgs[0];
 const values = myArgs.slice(1);
-// let id = 1;
+
+let index = -1;
+
 let essen = {};
 let tasks = [];
 let task = {};
+
 function addTask(){
 	try{
+		if(values && values.length<0){
+			return;
+		}
 
-	if(values && values.length<0){
-		return;
-	}
-	task = {};
-	task.id = essen.id;
-	task.name = values[0];	
-	task.description = values[1] || '';
-	task.status = 'todo';
-	task.createdAt = new Date().toString();
-	task.updatedAt = new Date().toString();
-	tasks.push(task);
-	console.log(`Task added successfully (ID: ${task.id})`);
-	essen.id++;
-	writeTaskJson();
+		task = {};
+		task.id = essen.id;
+		task.name = values[0];	
+		task.description = values[1] || '';
+		task.status = 'todo';
+		task.createdAt = new Date().toString();
+		task.updatedAt = new Date().toString();
+		tasks.push(task);
+		
+		console.log(`Task added successfully (ID: ${task.id})`);
+		essen.id++;
+		
+		writeJson('tasks.json');
+		writeJson('essen.json');
 	}catch(err){
 		console.err("Error: ", err);
 	}
 }
 
-async function writeTaskJson(){
+async function writeJson(file){
 	try{
-		await fsPro.writeFile('tasks.json', JSON.stringify(tasks, null, 2), 'utf8'); 
-		await fsPro.writeFile('essen.json', JSON.stringify(essen, null, 2), 'utf8');
+		await fsPro.writeFile(file, JSON.stringify(tasks, null, 2), 'utf8'); 
 	}catch(err){
 		console.log('Error writing files: ', err);
 	}
 }
 
-function updateTask(){
-	if(isNaN(values[0]) || values.length < 2){ return;
+function showTaskList(){
+	if(values.length > 2){
+		console.log('Invalid input');
+		return;
 	}
-	console.log(`Task updated successfully (ID:${values[0]})`);
 
+	if(values.length < 1){
+		for(task of tasks){
+			console.log(task.name);
+		}
+		return;
+	}
+
+	const filterStatus = values[0];
+	switch(filterStatus){
+		case 'done':
+			showTaskBy('done');
+			break;
+		case 'todo':
+			showTaskBy('todo');
+			break;
+		case 'in-progress':
+			showTaskBy('in-progress');
+			break;
+		default:
+			console.log('invalid args');
+	}
+}
+
+function showTaskBy(status){
+	for(task of tasks){
+		if(task.status === status){
+			console.log(task.name);
+		}
+	}
+}
+
+function updateTask(){
+	if(isNaN(values[0]) || values.length > 3){ 
+		console.log('Invalid input');
+		return;
+	}	
+
+	const id = parseInt(values[0]);
+	const name = values[1];
+	const description = values[2] || '';
+
+	for(task of tasks){
+		if(task.id === id){
+			task.name = name;
+			task.description = description;	
+			console.log(`Task updated successfully (ID:${id})`);
+			writeJson('tasks.json');
+			break;
+		}
+	}
 }
 
 function deleteTask(){
-	if(isNaN(values[0]) || values.length < 1){
+	if(isNaN(values[0]) || values.length > 1){
+		console.log('Invalid input');
 		return;
 	}
-	console.log(`Task deleted successfully (ID:${values[0]})`);
+
+	const id = parseInt(values[0]);
+	for (index in tasks){
+		if(tasks[index].id === id){
+			process.stdout.write('Are you sure? ');
+
+			process.stdin.on('data', (data) =>{
+				if(data.toString().trim() !== 'yes'){
+					console.log('Deleting task failed');
+					process.exit();	
+				}else{
+					tasks.splice(index, 1);
+					console.log(`Task deleted successfully (ID:${id})`);
+					writeJson('tasks.json');
+					process.exit();	
+				}
+			});	
+
+			break;
+		}
+	}
 }
 
 function init(){
@@ -62,12 +139,11 @@ function init(){
 		const tasksData = fs.readFileSync('tasks.json', 'utf8');
 		const essenData = fs.readFileSync('essen.json', 'utf8')
 		
-		console.log(tasksData);
 		if(tasksData){
 			tasks = JSON.parse(tasksData);
 			console.log('Data updated');
 		}
-		console.log(essenData);
+
 		if(essenData){
 			essen = JSON.parse(essenData);
 			console.log('Data id updated');
@@ -78,12 +154,15 @@ function init(){
 		console.error('Error reading file: ', err);
 	}
 }
+
 init();
+
 switch(options){
 	case 'add':
-		console.log(tasks);
-		console.log(essen);
 		addTask();
+		break;
+	case 'list':
+		showTaskList();
 		break;
 	case 'update':
 		updateTask();
