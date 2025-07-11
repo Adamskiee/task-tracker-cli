@@ -1,10 +1,10 @@
-import { promises as fsPromises } from 'fs';
+"use strict"
 import fs from 'fs';
 
 export default class Tasks {
 	constructor() {
+		this.tasks = [];
 		this.load();
-		console.log('Tasks obj created');	
 	}
 
 	getIndexById( id ) {
@@ -21,8 +21,6 @@ export default class Tasks {
 	
 	deleteTaskById( index ) {
 		this.tasks.splice( index, 1 );
-		this.save();
-		console.log('deleted');
 	}
 	
 	show() {
@@ -32,8 +30,7 @@ export default class Tasks {
 		}
 	}
 	
-	
-	showTaskBy(status){
+	showBy(status){
 		let task;
 		for(task of this.tasks){
 			if(task.status === status){
@@ -42,9 +39,9 @@ export default class Tasks {
 		}
 	}
 
-	async save() {
+	save() {
 		try {
-			await fsPromises.writeFile('tasks.json', JSON.stringify(this.tasks, null, 2), 'utf8');
+			fs.writeFileSync('tasks.json', JSON.stringify(this.tasks, null, 2), 'utf8');
 			console.log('Saved Successfully');	
 		}catch (err) {
 			console.err('Error writing file: ', err);

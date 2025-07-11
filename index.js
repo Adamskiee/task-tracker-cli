@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-
-import { promises as fsPro } from 'fs';
+"use strict"
 import fs from 'fs';
 import Tasks from './tasks.js';
 
@@ -9,8 +8,8 @@ const myArgs = args.slice(2);
 
 const options = myArgs[0];
 const values = myArgs.slice(1);
+const statuses = ['todo', 'in-progress', 'done'];
 
-let tasksObj;
 let taskIndex = -1;
 let essen = {};
 let tasks;
@@ -33,23 +32,22 @@ function addTask(){
 		
 		console.log(`Task added successfully (ID: ${task.id})`);
 		essen.id++;
-		tasks.save();
-		//writeJson('tasks.json', tasks);
+		tasks.save();	
 		writeJson('essen.json', essen);
 	}catch(err){
 		console.log("Error: ", err);
 	}
 }
 
-async function writeJson(file, json) {
+function writeJson(file, json) {
 	try{
-		await fsPro.writeFile(file, JSON.stringify(json, null, 2), 'utf8'); 
+		fs.writeFileSync(file, JSON.stringify(json, null, 2), 'utf8'); 
 	}catch(err){
 		console.log('Error writing files: ', err);
 	}
 }
 
-function showTaskList(){
+function showTasks(){
 	if(values.length > 2){
 		console.log('Invalid input');
 		return;
@@ -63,16 +61,17 @@ function showTaskList(){
 	const filterStatus = values[0];
 	switch(filterStatus){
 		case 'done':
-			tasks.showTaskBy('done');
+			tasks.showBy('done');
 			break;
 		case 'todo':
-			tasks.showTaskBy('todo');
+			tasks.showBy('todo');
 			break;
 		case 'in-progress':
-			tasks.showTaskBy('in-progress');
+			tasks.showBy('in-progress');
 			break;
 		default:
-			console.log('invalid args');
+			console.log('Invalid args');
+			break;
 	}
 }
 
@@ -81,16 +80,20 @@ function updateTask(){
 		console.log('Invalid input');
 		return;
 	}	
-
-	const id = parseInt(values[0]);
-	const name = values[1];
-	const description = values[2] || '';
-	task = tasks.getObjById(id);
-	task.name = name; 
-	task.description = description; 
-	task.updatedAt = new Date().toString();
-	console.log(`Task updated successfully (ID:${id})`);
-	tasks.save();
+	try{
+		const id = parseInt(values[0]);
+		const name = values[1];
+		const description = values[2] || '';
+		task = tasks.getObjById(id);
+		if (!task) throw `id ${id} not found`;
+		task.name = name; 
+		task.description = description; 
+		task.updatedAt = new Date().toString();
+		console.log(`Task updated successfully (ID:${id})`);
+		tasks.save();
+	}catch (err) {
+		console.log(`Error updating: ${err}`);
+	}
 }
 
 function deleteTask(){
@@ -98,26 +101,29 @@ function deleteTask(){
 		console.log('Invalid input');
 		return;
 	}
+	try {
+		const id = parseInt(values[0]);
+		
+		taskIndex = tasks.getIndexById(id);
+		if(taskIndex < 0) throw `id ${taskIndex} not found`;
 
-	const id = parseInt(values[0]);
-	
-	taskIndex = tasks.getIndexById(id);
+		process.stdout.write('Are you sure? ');
 
-	process.stdout.write('Are you sure? ');
-
-	process.stdin.on('data', (data) =>{
-		if(data.toString().trim() !== 'yes'){
-			console.log('Deleting task failed');
-			process.exit();	
-		}else{
-			tasks.deleteTaskById(taskIndex);
-			console.log(`Task deleted successfully (ID:${id})`);
-			process.exit();	
-		}
-	});	
+		process.stdin.on('data', (data) =>{
+			if(data.toString().trim() !== 'yes'){
+				console.log('Deleting task failed');
+				process.exit();	
+			}else{
+				tasks.deleteTaskById(taskIndex);
+				tasks.save();
+				console.log(`Task deleted successfully (ID:${id})`);
+				process.exit();	
+			}
+		});
+	} catch (err){
+		console.log(`Error deleting: ${err}`);
+	}
 }
-
-const statuses = ['todo', 'in-progress', 'done'];
 
 function markTask(){
 	if( values.length < 1 || !statuses.includes(values[0]) ) {
@@ -132,13 +138,17 @@ function markTask(){
 		console.log('Invalid input');
 		return;
 	}
-
-	values.forEach((id)=> {
-		task = tasks.getObjById(id);
-		task.status = status; 
-		console.log(`${task.name} is mark as ${status}`);	
-		tasks.save();
-	});
+	try{
+		values.forEach((id)=> {
+			task = tasks.getObjById(id);
+			if (!task) throw `id ${id} not found`;
+			task.status = status; 
+			console.log(`${task.name} is mark as ${status}`);	
+			tasks.save();
+		});
+	}catch (err) {
+		console.log(`Error marking task: ${err}`);
+	}
 }
 
 function init(){
@@ -165,7 +175,7 @@ switch(options){
 		addTask();
 		break;
 	case 'list':
-		showTaskList();
+		showTasks();
 		break;
 	case 'update':
 		updateTask();
