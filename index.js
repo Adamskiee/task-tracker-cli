@@ -33,16 +33,16 @@ function addTask(){
 		console.log(`Task added successfully (ID: ${task.id})`);
 		essen.id++;
 		
-		writeJson('tasks.json');
-		writeJson('essen.json');
+		writeJson('tasks.json', tasks);
+		writeJson('essen.json', essen);
 	}catch(err){
 		console.err("Error: ", err);
 	}
 }
 
-async function writeJson(file){
+async function writeJson(file, json){
 	try{
-		await fsPro.writeFile(file, JSON.stringify(tasks, null, 2), 'utf8'); 
+		await fsPro.writeFile(file, JSON.stringify(json, null, 2), 'utf8'); 
 	}catch(err){
 		console.log('Error writing files: ', err);
 	}
@@ -100,7 +100,7 @@ function updateTask(){
 			task.name = name;
 			task.description = description;	
 			console.log(`Task updated successfully (ID:${id})`);
-			writeJson('tasks.json');
+			writeJson('tasks.json', tasks);
 			break;
 		}
 	}
@@ -124,7 +124,7 @@ function deleteTask(){
 				}else{
 					tasks.splice(index, 1);
 					console.log(`Task deleted successfully (ID:${id})`);
-					writeJson('tasks.json');
+					writeJson('tasks.json', tasks);
 					process.exit();	
 				}
 			});	
@@ -132,6 +132,37 @@ function deleteTask(){
 			break;
 		}
 	}
+}
+
+const statuses = ['todo', 'in-progress', 'done'];
+
+function markTask(){
+	if( values.length < 1 || !statuses.includes(values[0]) ) {
+		console.log('Invalid input');
+		return;
+	}
+	
+	const status = values[0];
+	values.shift();
+
+	if(values.some( (value) => isNaN(value)) ){
+		console.log('Invalid input');
+		return;
+	}
+
+	values.forEach((id)=> {
+		for ( task of tasks ) {
+			
+			console.log(task.id);
+			if(task.id == id){
+				task.status = status;
+				console.log(`${task.name} is mark as ${status}`);	
+				writeJson('tasks.json', tasks);	
+				break;
+					
+			}
+		}
+	});
 }
 
 function init(){
@@ -169,6 +200,9 @@ switch(options){
 		break;
 	case 'delete':
 		deleteTask();
+		break;
+	case 'mark':
+		markTask();
 		break;
 	default:
 		break;

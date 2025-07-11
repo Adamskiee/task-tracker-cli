@@ -1,18 +1,3 @@
-[
-  {
-    "id": 1,
-    "name": "haha",
-    "description": "goo",
-    "status": "todo",
-    "createdAt": "Thu Jul 10 2025 15:50:48 GMT+0800 (Philippine Standard Time)",
-    "updatedAt": "Thu Jul 10 2025 15:50:48 GMT+0800 (Philippine Standard Time)"
-  },
-  {
-    "id": 5,
-    "name": "hahaehae",
-    "description": "",
-    "status": "todo",
-    "createdAt": "Thu Jul 10 2025 22:21:08 GMT+0800 (Philippine Standard Time)",
-    "updatedAt": "Thu Jul 10 2025 22:21:08 GMT+0800 (Philippine Standard Time)"
-  }
-]
+{
+  "id": 3
+}
